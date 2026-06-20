@@ -1,0 +1,25 @@
+﻿{
+    "resource_version":  4,
+    "metadata":  {
+                     "version":  3,
+                     "sources":  [
+
+                                 ],
+                     "remote_schemas":  [
+                                            {
+                                                "name":  "bff_service",
+                                                "definition":  {
+                                                                   "url":  "http://graphql-service:8000/graphql",
+                                                                   "timeout_seconds":  60,
+                                                                   "headers":  [
+                                                                                   {
+                                                                                       "name":  "Expect",
+                                                                                       "value":  ""
+                                                                                   }
+                                                                               ],
+                                                                   "forward_client_headers":  true
+                                                               }
+                                            }
+                                        ]
+                 }
+}

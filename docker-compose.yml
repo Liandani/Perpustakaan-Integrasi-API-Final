@@ -116,5 +116,34 @@ services:
       - "5672:5672"
       - "15672:15672"
 
+  hasura-db:
+    image: postgres:15-alpine
+    container_name: hasura_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: hasurapassword
+      POSTGRES_DB: hasura_metadata
+    volumes:
+      - hasura_db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  hasura:
+    image: hasura/graphql-engine:v2.38.0
+    container_name: hasura_graphql
+    ports:
+      - "8080:8080"
+    depends_on:
+      - hasura-db
+      - mysql
+    restart: always
+    environment:
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://postgres:hasurapassword@hasura-db:5432/hasura_metadata
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ADMIN_SECRET: "adminsecret"
+
 volumes:
   mysql_data:
+  hasura_db_data:

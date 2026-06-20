@@ -39,6 +39,8 @@ type Loan {
     status: String!
     created_at: String
     updated_at: String
+    user: User @field(resolver: "App\\GraphQL\\Queries\\LoanUser")
+    book: Book @field(resolver: "App\\GraphQL\\Queries\\LoanBook")
 }
 
 type Fine {
@@ -49,4 +51,6 @@ type Fine {
     status: String!
     created_at: String
     updated_at: String
+    user: User @field(resolver: "App\\GraphQL\\Queries\\FineUser")
+    loan: Loan @field(resolver: "App\\GraphQL\\Queries\\FineLoan")
 }
