@@ -1,0 +1,10 @@
+{
+    "name": "enterprise/shared-core",
+    "description": "Shared models for the microservices",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "App\\Models\\": "src/Models/"
+        }
+    }
+}

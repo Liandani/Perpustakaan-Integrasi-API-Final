@@ -1,0 +1,120 @@
+services:
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./api-gateway/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      USER_API_URL: http://user-api:8000
+      BOOK_API_URL: http://book-api:8000
+      LOAN_API_URL: http://loan-api:8000
+      FINE_API_URL: http://fine-api:8000
+      GRAPHQL_SERVICE_URL: http://graphql-service:8000
+
+
+  user-api:
+    build:
+      context: .
+      dockerfile: ./sync/user-api/Dockerfile
+    ports:
+      - "8001:8000"
+    command: sh -c "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  book-api:
+    build:
+      context: .
+      dockerfile: ./sync/book-api/Dockerfile
+    ports:
+      - "8002:8000"
+    command: sh -c "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  loan-api:
+    build:
+      context: .
+      dockerfile: ./sync/loan-api/Dockerfile
+    ports:
+      - "8003:8000"
+    command: sh -c "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  fine-api:
+    build:
+      context: .
+      dockerfile: ./sync/fine-api/Dockerfile
+    ports:
+      - "8004:8000"
+    command: sh -c "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  graphql-service:
+    build:
+      context: .
+      dockerfile: ./sync/graphql-service/Dockerfile
+    ports:
+      - "8005:8000"
+
+#  user-worker:
+#    build:
+#      context: .
+#      dockerfile: ./async/user-worker/Dockerfile
+#    # command: php artisan queue:work
+
+#  book-worker:
+#    build:
+#      context: .
+#      dockerfile: ./async/book-worker/Dockerfile
+#    # command: php artisan queue:work
+
+  loan-worker:
+    build:
+      context: .
+      dockerfile: ./async/loan-worker/Dockerfile
+    ports:
+      - "8011:8000"
+    # command: php artisan queue:work
+
+  fine-worker:
+    build:
+      context: .
+      dockerfile: ./async/fine-worker/Dockerfile
+    ports:
+      - "8012:8000"
+    # command: php artisan queue:work
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      timeout: 20s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+volumes:
+  mysql_data:

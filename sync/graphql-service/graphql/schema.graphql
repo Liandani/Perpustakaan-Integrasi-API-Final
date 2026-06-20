@@ -1,0 +1,52 @@
+scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
+
+type Query {
+    users: [User!]!
+    user(id: ID!): User
+    
+    books: [Book!]!
+    book(id: ID!): Book
+    
+    loans: [Loan!]!
+    loan(id: ID!): Loan
+    
+    fines: [Fine!]!
+    fine(id: ID!): Fine
+}
+
+type User {
+    id: ID!
+    name: String!
+    email: String!
+    created_at: String
+    updated_at: String
+}
+
+type Book {
+    id: ID!
+    title: String!
+    available: Boolean!
+    created_at: String
+    updated_at: String
+}
+
+type Loan {
+    id: ID!
+    user_id: ID!
+    book_id: ID!
+    loan_date: String!
+    due_date: String!
+    status: String!
+    created_at: String
+    updated_at: String
+}
+
+type Fine {
+    id: ID!
+    loan_id: ID!
+    user_id: ID!
+    amount: Float! @rename(attribute: "total_fine")
+    status: String!
+    created_at: String
+    updated_at: String
+}
