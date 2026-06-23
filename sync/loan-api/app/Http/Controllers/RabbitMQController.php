@@ -11,8 +11,25 @@ class RabbitMQController extends Controller
 {
     public function send()
     {
+        $loanId = request()->input('loanId') ?? request()->query('loanId') ?? request()->input('loan_id') ?? request()->query('loan_id');
         $userId = request()->input('userId') ?? request()->query('userId');
         $bookId = request()->input('bookId') ?? request()->query('bookId');
+
+        $loan = null;
+        if ($loanId) {
+            $loan = \App\Models\Loan::find($loanId);
+        } else {
+            $loan = \App\Models\Loan::latest('id')->first();
+        }
+
+        if ($loan) {
+            if (!$userId) {
+                $userId = $loan->user_id;
+            }
+            if (!$bookId) {
+                $bookId = $loan->book_id;
+            }
+        }
 
         $client = new Client([
             'http_errors' => false,
@@ -93,6 +110,7 @@ class RabbitMQController extends Controller
         $data = [
             'user' => $user,
             'book' => $book,
+            'loan' => $loan ? $loan->toArray() : null,
             'message' => 'Book Borrowed Successfully'
         ];
 

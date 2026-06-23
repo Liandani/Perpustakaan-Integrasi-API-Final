@@ -10,6 +10,7 @@ class RabbitMQController extends Controller
 {
     public function send()
     {
+        $loanId = request()->input('loanId') ?? request()->query('loanId') ?? request()->input('loan_id') ?? request()->query('loan_id');
         $userId = request()->input('userId') ?? request()->query('userId');
         $bookId = request()->input('bookId') ?? request()->query('bookId');
 
@@ -19,6 +20,56 @@ class RabbitMQController extends Controller
             'timeout' => 10,
         ]);
 
+        $loan = null;
+        try {
+            if ($loanId) {
+                $loanObj = \Illuminate\Support\Facades\DB::table('loans')->where('id', $loanId)->first();
+                if ($loanObj) {
+                    $loan = (array) $loanObj;
+                }
+            } else {
+                $loanObj = \Illuminate\Support\Facades\DB::table('loans')->orderBy('id', 'desc')->first();
+                if ($loanObj) {
+                    $loan = (array) $loanObj;
+                }
+            }
+        } catch (\Throwable $dbEx) {
+            // DB connection fail, fall back to HTTP
+            try {
+                $loanApiUrl = env('LOAN_API_URL', 'http://loan-api:8000');
+                if ($loanId) {
+                    $loanResponse = $client->get($loanApiUrl . '/loans/' . $loanId);
+                    if ($loanResponse->getStatusCode() == 200) {
+                        $responseBody = json_decode($loanResponse->getBody()->getContents(), true);
+                        $loan = $responseBody['data'] ?? null;
+                    }
+                } else {
+                    $loanResponse = $client->get($loanApiUrl . '/loans');
+                    if ($loanResponse->getStatusCode() == 200) {
+                        $responseBody = json_decode($loanResponse->getBody()->getContents(), true);
+                        $loans = $responseBody['data'] ?? [];
+                        if (!empty($loans)) {
+                            $loan = end($loans);
+                        }
+                    }
+                }
+            } catch (\Throwable $httpEx) {
+                // fall through
+            }
+        }
+
+        if ($loan) {
+            if (is_object($loan)) {
+                $loan = (array) $loan;
+            }
+            if (!$userId) {
+                $userId = $loan['user_id'] ?? null;
+            }
+            if (!$bookId) {
+                $bookId = $loan['book_id'] ?? null;
+            }
+        }
+
         try {
             $userApiUrl = env('USER_API_URL', 'http://user-api:8000');
             $bookApiUrl = env('BOOK_API_URL', 'http://book-api:8000');
@@ -27,7 +78,8 @@ class RabbitMQController extends Controller
             if (!$userId) {
                 $userResponse = $client->get($userApiUrl . '/users');
                 if ($userResponse->getStatusCode() == 200) {
-                    $users = json_decode($userResponse->getBody()->getContents(), true);
+                    $responseBody = json_decode($userResponse->getBody()->getContents(), true);
+                    $users = $responseBody['data'] ?? [];
                     if (!empty($users)) {
                         $user = end($users);
                         $userId = $user['id'];
@@ -41,14 +93,20 @@ class RabbitMQController extends Controller
                 }
             } else {
                 $userResponse = $client->get($userApiUrl . '/users/' . $userId);
-                $user = $userResponse->getStatusCode() == 200 ? json_decode($userResponse->getBody()->getContents(), true) : ['id' => (int)$userId, 'name' => 'Mock User'];
+                if ($userResponse->getStatusCode() == 200) {
+                    $responseBody = json_decode($userResponse->getBody()->getContents(), true);
+                    $user = $responseBody['data'] ?? ['id' => (int)$userId, 'name' => 'Mock User'];
+                } else {
+                    $user = ['id' => (int)$userId, 'name' => 'Mock User'];
+                }
             }
 
             // Fetch Book (Latest if not specified)
             if (!$bookId) {
                 $bookResponse = $client->get($bookApiUrl . '/books');
                 if ($bookResponse->getStatusCode() == 200) {
-                    $books = json_decode($bookResponse->getBody()->getContents(), true);
+                    $responseBody = json_decode($bookResponse->getBody()->getContents(), true);
+                    $books = $responseBody['data'] ?? [];
                     if (!empty($books)) {
                         $book = end($books);
                         $bookId = $book['id'];
@@ -62,7 +120,12 @@ class RabbitMQController extends Controller
                 }
             } else {
                 $bookResponse = $client->get($bookApiUrl . '/books/' . $bookId);
-                $book = $bookResponse->getStatusCode() == 200 ? json_decode($bookResponse->getBody()->getContents(), true) : ['id' => (int)$bookId, 'title' => 'Mock Book'];
+                if ($bookResponse->getStatusCode() == 200) {
+                    $responseBody = json_decode($bookResponse->getBody()->getContents(), true);
+                    $book = $responseBody['data'] ?? ['id' => (int)$bookId, 'title' => 'Mock Book'];
+                } else {
+                    $book = ['id' => (int)$bookId, 'title' => 'Mock Book'];
+                }
             }
 
             // RabbitMQ Connection
@@ -92,6 +155,7 @@ class RabbitMQController extends Controller
             $data = [
                 'user' => $user,
                 'book' => $book,
+                'loan' => $loan,
                 'message' => 'Book Borrowed Successfully',
                 'meta' => [
                     'userId' => (int) $userId,

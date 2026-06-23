@@ -1,979 +1,1305 @@
 {
-	"info": {
-		"_postman_id": "c1f7b8a1-432d-4569-8e47-494a8f11d612",
-		"name": "Enterprise Application Integration API",
-		"description": "Collection untuk menguji arsitektur Sync dan Async pada sistem peminjaman buku.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "1. API Gateway",
-			"description": "Mengakses seluruh layanan melalui API Gateway di port 8000.",
-			"item": [
-				{
-					"name": "Create User",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Budi Santoso\",\n    \"email\": \"budi.test@example.com\",\n    \"password\": \"password123\"\n}"
-						},
-						"url": {
-							"raw": "{{api_gateway_url}}/users",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"users"
-							]
-						}
-					}
-				},
-				{
-					"name": "Update User",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"var urlStr = pm.request.url.toString();",
-									"var match = urlStr.match(/(https?:\\/\\/[^\\/]+)\\/users\\/(\\d+)/);",
-									"if (match) {",
-									"    var baseUrl = match[1];",
-									"    var userId = match[2];",
-									"    if (pm.collectionVariables.get(\"last_loaded_user_id\") !== userId) {",
-									"        pm.sendRequest({",
-									"            url: baseUrl + \"/users/\" + userId,",
-									"            method: 'GET',",
-									"            header: {",
-									"                'Accept': 'application/json'",
-									"            }",
-									"        }, function (err, res) {",
-									"            if (res && res.code === 200) {",
-									"                var json = res.json();",
-									"                if (json && json.data) {",
-									"                    pm.collectionVariables.set(\"last_loaded_user_id\", userId);",
-									"                    var newBody = {",
-									"                        name: json.data.name,",
-									"                        email: json.data.email",
-									"                    };",
-									"                    pm.request.body.raw = JSON.stringify(newBody, null, 4);",
-									"                }",
-									"            }",
-									"        });",
-									"    }",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Budi Santoso Edit\",\n    \"email\": \"budi.edit@example.com\"\n}"
-						},
-						"url": {
-							"raw": "{{api_gateway_url}}/users/1",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"users",
-								"1"
-							]
-						}
-					}
-				},
-				{
-					"name": "Delete User",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{api_gateway_url}}/users/1",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"users",
-								"1"
-							]
-						}
-					}
-				},
-				{
-					"name": "Create Book",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"title\": \"Seni Berpikir Positif\",\n    \"available\": true\n}"
-						},
-						"url": {
-							"raw": "{{api_gateway_url}}/books",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"books"
-							]
-						}
-					}
-				},
-				{
-					"name": "Update Book",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"var urlStr = pm.request.url.toString();",
-									"var match = urlStr.match(/(https?:\\/\\/[^\\/]+)\\/books\\/(\\d+)/);",
-									"if (match) {",
-									"    var baseUrl = match[1];",
-									"    var bookId = match[2];",
-									"    pm.sendRequest({",
-									"        url: baseUrl + \"/books/\" + bookId,",
-									"        method: 'GET',",
-									"        header: {",
-									"            'Accept': 'application/json'",
-									"        }",
-									"    }, function (err, res) {",
-									"        if (res && res.code === 200) {",
-									"            var json = res.json();",
-									"            if (json && json.data) {",
-									"                pm.collectionVariables.set(\"current_book_title\", json.data.title);",
-									"                pm.collectionVariables.set(\"current_book_available\", json.data.available);",
-									"            }",
-									"        }",
-									"    });",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"title\": \"{{current_book_title}} Edit\",\n    \"available\": {{current_book_available}}\n}"
-						},
-						"url": {
-							"raw": "{{api_gateway_url}}/books/1",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"books",
-								"1"
-							]
-						}
-					}
-				},
-				{
-					"name": "Delete Book",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{api_gateway_url}}/books/1",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"books",
-								"1"
-							]
-						}
-					}
-				},
-				{
-					"name": "Create Loan (Borrow Book)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"user_id\": 1,\n    \"book_id\": 1,\n    \"loan_date\": \"2026-06-14\",\n    \"due_date\": \"2026-06-21\"\n}"
-						},
-						"url": {
-							"raw": "{{api_gateway_url}}/loans",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"loans"
-							]
-						}
-					}
-				},
-				{
-					"name": "Update Loan",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"status\": \"returned\"\n}"
-						},
-						"url": {
-							"raw": "{{api_gateway_url}}/loans/1",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"loans",
-								"1"
-							]
-						}
-					}
-				},
-				{
-					"name": "Delete Loan",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{api_gateway_url}}/loans/1",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"loans",
-								"1"
-							]
-						}
-					}
-				},
-				{
-					"name": "Return Book",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"loan_id\": 1,\n    \"return_date\": \"2026-06-24\"\n}"
-						},
-						"url": {
-							"raw": "{{api_gateway_url}}/loans/return",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"loans",
-								"return"
-							]
-						}
-					}
-				},
-				{
-					"name": "Check Fine",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"loan_id\": 1\n}"
-						},
-						"url": {
-							"raw": "{{api_gateway_url}}/fines/check",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"fines",
-								"check"
-							]
-						}
-					}
-				},
-				{
-					"name": "Update Fine",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"status\": \"paid\"\n}"
-						},
-						"url": {
-							"raw": "{{api_gateway_url}}/fines/1",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"fines",
-								"1"
-							]
-						}
-					}
-				},
-				{
-					"name": "Delete Fine",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{api_gateway_url}}/fines/1",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"fines",
-								"1"
-							]
-						}
-					}
-				},
-				{
-					"name": "Send Message to RabbitMQ",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{api_gateway_url}}/send-message",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"send-message"
-							]
-						}
-					}
-				},
-				{
-					"name": "Consume Message from RabbitMQ",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{api_gateway_url}}/consume-message",
-							"host": [
-								"{{api_gateway_url}}"
-							],
-							"path": [
-								"consume-message"
-							]
-						}
-					}
-				}
-			]
-		},
-		{
-			"name": "2. Sync API (REST - Direct)",
-			"description": "Endpoint konvensional yang langsung mengenai database dan memblokir (synchronous).",
-			"item": [
-				{
-					"name": "Book Service",
-					"item": [
-						{
-							"name": "Get All Books",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{book_api_url}}/books",
-									"host": [
-										"{{book_api_url}}"
-									],
-									"path": [
-										"books"
-									]
-								}
-							}
-						},
-						{
-							"name": "Create Book",
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"title\": \"Clean Architecture\",\n    \"available\": true\n}"
-								},
-								"url": {
-									"raw": "{{book_api_url}}/books",
-									"host": [
-										"{{book_api_url}}"
-									],
-									"path": [
-										"books"
-									]
-								}
-							}
-						},
-						{
-							"name": "Update Book",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"var urlStr = pm.request.url.toString();",
-											"var match = urlStr.match(/(https?:\\/\\/[^\\/]+)\\/books\\/(\\d+)/);",
-											"if (match) {",
-											"    var baseUrl = match[1];",
-											"    var bookId = match[2];",
-											"    pm.sendRequest({",
-											"        url: baseUrl + \"/books/\" + bookId,",
-											"        method: 'GET',",
-											"        header: {",
-											"            'Accept': 'application/json'",
-											"        }",
-											"    }, function (err, res) {",
-											"        if (res && res.code === 200) {",
-											"            var json = res.json();",
-											"            if (json && json.data) {",
-											"                pm.collectionVariables.set(\"current_book_title\", json.data.title);",
-											"                pm.collectionVariables.set(\"current_book_available\", json.data.available);",
-											"            }",
-											"        }",
-											"    });",
-											"}"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"title\": \"{{current_book_title}} Edit\",\n    \"available\": {{current_book_available}}\n}"
-								},
-								"url": {
-									"raw": "{{book_api_url}}/books/1",
-									"host": [
-										"{{book_api_url}}"
-									],
-									"path": [
-										"books",
-										"1"
-									]
-								}
-							}
-						},
-						{
-							"name": "Delete Book",
-							"request": {
-								"method": "DELETE",
-								"header": [],
-								"url": {
-									"raw": "{{book_api_url}}/books/1",
-									"host": [
-										"{{book_api_url}}"
-									],
-									"path": [
-										"books",
-										"1"
-									]
-								}
-							}
-						},
-						{
-							"name": "Check Book Status",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{book_api_url}}/books/1/status",
-									"host": [
-										"{{book_api_url}}"
-									],
-									"path": [
-										"books",
-										"1",
-										"status"
-									]
-								}
-							}
-						}
-					]
-				},
-				{
-					"name": "User Service",
-					"item": [
-						{
-							"name": "Get All Users",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{user_api_url}}/users",
-									"host": [
-										"{{user_api_url}}"
-									],
-									"path": [
-										"users"
-									]
-								}
-							}
-						},
-						{
-							"name": "Create User",
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"name\": \"Budi Santoso\",\n    \"email\": \"budi@example.com\",\n    \"password\": \"password123\"\n}"
-								},
-								"url": {
-									"raw": "{{user_api_url}}/users",
-									"host": [
-										"{{user_api_url}}"
-									],
-									"path": [
-										"users"
-									]
-								}
-							}
-						},
-						{
-							"name": "Update User",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"var urlStr = pm.request.url.toString();",
-											"var match = urlStr.match(/(https?:\\/\\/[^\\/]+)\\/users\\/(\\d+)/);",
-											"if (match) {",
-											"    var baseUrl = match[1];",
-											"    var userId = match[2];",
-											"    pm.sendRequest({",
-											"        url: baseUrl + \"/users/\" + userId,",
-											"        method: 'GET',",
-											"        header: {",
-											"            'Accept': 'application/json'",
-											"        }",
-											"    }, function (err, res) {",
-											"        if (res && res.code === 200) {",
-											"            var json = res.json();",
-											"            if (json && json.data) {",
-											"                pm.collectionVariables.set(\"current_user_name\", json.data.name);",
-											"                pm.collectionVariables.set(\"current_user_email\", json.data.email);",
-											"            }",
-											"        }",
-											"    });",
-											"}"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"name\": \"{{current_user_name}} Edit\",\n    \"email\": \"edit.{{current_user_email}}\"\n}"
-								},
-								"url": {
-									"raw": "{{user_api_url}}/users/1",
-									"host": [
-										"{{user_api_url}}"
-									],
-									"path": [
-										"users",
-										"1"
-									]
-								}
-							}
-						},
-						{
-							"name": "Delete User",
-							"request": {
-								"method": "DELETE",
-								"header": [],
-								"url": {
-									"raw": "{{user_api_url}}/users/1",
-									"host": [
-										"{{user_api_url}}"
-									],
-									"path": [
-										"users",
-										"1"
-									]
-								}
-							}
-						}
-					]
-				},
-				{
-					"name": "Loan Service",
-					"item": [
-						{
-							"name": "Get All Loans",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{loan_api_url}}/loans",
-									"host": [
-										"{{loan_api_url}}"
-									],
-									"path": [
-										"loans"
-									]
-								}
-							}
-						},
-						{
-							"name": "Create Loan (Borrow Book)",
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"user_id\": 1,\n    \"book_id\": 1,\n    \"loan_date\": \"2026-06-14\",\n    \"due_date\": \"2026-06-21\"\n}"
-								},
-								"url": {
-									"raw": "{{loan_api_url}}/loans",
-									"host": [
-										"{{loan_api_url}}"
-									],
-									"path": [
-										"loans"
-									]
-								}
-							}
-						},
-						{
-							"name": "Update Loan",
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"status\": \"returned\"\n}"
-								},
-								"url": {
-									"raw": "{{loan_api_url}}/loans/1",
-									"host": [
-										"{{loan_api_url}}"
-									],
-									"path": [
-										"loans",
-										"1"
-									]
-								}
-							}
-						},
-						{
-							"name": "Delete Loan",
-							"request": {
-								"method": "DELETE",
-								"header": [],
-								"url": {
-									"raw": "{{loan_api_url}}/loans/1",
-									"host": [
-										"{{loan_api_url}}"
-									],
-									"path": [
-										"loans",
-										"1"
-									]
-								}
-							}
-						},
-						{
-							"name": "Return Book",
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"loan_id\": 1,\n    \"return_date\": \"2026-06-24\"\n}"
-						},
-						"url": {
-							"raw": "{{loan_api_url}}/loans/return",
-							"host": [
-								"{{loan_api_url}}"
-							],
-							"path": [
-								"loans",
-								"return"
-							]
-						}
-					}
-						}
-					]
-				},
-				{
-					"name": "Fine Service",
-					"item": [
-						{
-							"name": "Get All Fines",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{fine_api_url}}/fines",
-									"host": [
-										"{{fine_api_url}}"
-									],
-									"path": [
-										"fines"
-									]
-								}
-							}
-						},
-						{
-							"name": "Create Fine (Manual)",
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"loan_id\": 1,\n    \"user_id\": 1,\n    \"book_id\": 1,\n    \"due_date\": \"2026-06-21\",\n    \"return_date\": \"2026-06-24\",\n    \"late_days\": 3,\n    \"fine_per_day\": 2000,\n    \"total_fine\": 6000,\n    \"status\": \"unpaid\"\n}"
-								},
-								"url": {
-									"raw": "{{fine_api_url}}/fines",
-									"host": [
-										"{{fine_api_url}}"
-									],
-									"path": [
-										"fines"
-									]
-								}
-							}
-						},
-						{
-							"name": "Update Fine",
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"status\": \"paid\"\n}"
-								},
-								"url": {
-									"raw": "{{fine_api_url}}/fines/1",
-									"host": [
-										"{{fine_api_url}}"
-									],
-									"path": [
-										"fines",
-										"1"
-									]
-								}
-							}
-						},
-						{
-							"name": "Delete Fine",
-							"request": {
-								"method": "DELETE",
-								"header": [],
-								"url": {
-									"raw": "{{fine_api_url}}/fines/1",
-									"host": [
-										"{{fine_api_url}}"
-									],
-									"path": [
-										"fines",
-										"1"
-									]
-								}
-							}
-						},
-						{
-							"name": "Check Fine",
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"loan_id\": 1\n}"
-								},
-								"url": {
-									"raw": "{{fine_api_url}}/fines/check",
-									"host": [
-										"{{fine_api_url}}"
-									],
-									"path": [
-										"fines",
-										"check"
-									]
-								}
-							}
-						}
-					]
-				}
-			]
-		},
-		{
-			"name": "3. Async API (RabbitMQ - Direct)",
-			"description": "Endpoint berbasis Event-Driven menggunakan RabbitMQ.",
-			"item": [
-				{
-					"name": "Loan Worker (PUBLISHER)",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{loan_worker_url}}/send-message",
-							"host": [
-								"{{loan_worker_url}}"
-							],
-							"path": [
-								"send-message"
-							]
-						},
-						"description": "Mem-publish pesan bahwa buku telah dipinjam ke antrean RabbitMQ (book_queue)."
-					}
-				},
-				{
-					"name": "Fine Worker (CONSUMER)",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{fine_worker_url}}/consume-message",
-							"host": [
-								"{{fine_worker_url}}"
-							],
-							"path": [
-								"consume-message"
-							]
-						},
-						"description": "Menarik dan memproses pesan dari antrean RabbitMQ (book_queue)."
-					}
-				}
-			]
-		}
-	],
-	"variable": [
-		{
-			"key": "api_gateway_url",
-			"value": "http://localhost:8000"
-		},
-		{
-			"key": "book_api_url",
-			"value": "http://localhost:8002"
-		},
-		{
-			"key": "user_api_url",
-			"value": "http://localhost:8001"
-		},
-		{
-			"key": "loan_api_url",
-			"value": "http://localhost:8003"
-		},
-		{
-			"key": "fine_api_url",
-			"value": "http://localhost:8004"
-		},
-		{
-			"key": "loan_worker_url",
-			"value": "http://localhost:8011"
-		},
-		{
-			"key": "fine_worker_url",
-			"value": "http://localhost:8012"
-		}
-	]
+    "info": {
+        "_postman_id": "c1f7b8a1-432d-4569-8e47-494a8f11d612",
+        "name": "Enterprise Application Integration API",
+        "description": "Collection untuk menguji arsitektur Sync dan Async pada sistem peminjaman buku.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "1. API Gateway",
+            "description": "Mengakses seluruh layanan melalui API Gateway di port 8000.",
+            "item": [
+                {
+                    "name": "Create User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Budi Santoso\",\n    \"email\": \"budi.test@example.com\",\n    \"password\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{api_gateway_url}}/users",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "users"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                    "    var json = pm.response.json();",
+                                    "    if (json && json.data && json.data.id) {",
+                                    "        pm.collectionVariables.set(\"current_user_id\", json.data.id);",
+                                    "        pm.collectionVariables.set(\"user_id\", json.data.id);",
+                                    "        console.log(\"Saved current_user_id/user_id:\", json.data.id);",
+                                    "    }",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update User",
+                    "event": [
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "exec": [
+                                    "var urlStr = pm.request.url.toString();",
+                                    "var match = urlStr.match(/(https?:\\/\\/[^\\/]+)\\/users\\/(\\d+)/);",
+                                    "if (match) {",
+                                    "    var baseUrl = match[1];",
+                                    "    var userId = match[2];",
+                                    "    if (pm.collectionVariables.get(\"last_loaded_user_id\") !== userId) {",
+                                    "        pm.sendRequest({",
+                                    "            url: baseUrl + \"/users/\" + userId,",
+                                    "            method: 'GET',",
+                                    "            header: {",
+                                    "                'Accept': 'application/json'",
+                                    "            }",
+                                    "        }, function (err, res) {",
+                                    "            if (res && res.code === 200) {",
+                                    "                var json = res.json();",
+                                    "                if (json && json.data) {",
+                                    "                    pm.collectionVariables.set(\"last_loaded_user_id\", userId);",
+                                    "                    var newBody = {",
+                                    "                        name: json.data.name,",
+                                    "                        email: json.data.email",
+                                    "                    };",
+                                    "                    pm.request.body.raw = JSON.stringify(newBody, null, 4);",
+                                    "                }",
+                                    "            }",
+                                    "        });",
+                                    "    }",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Budi Santoso Edit\",\n    \"email\": \"budi.edit@example.com\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{api_gateway_url}}/users/{{current_user_id}}",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete User",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{api_gateway_url}}/users/{{current_user_id}}",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "1"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.collectionVariables.unset(\"current_user_id\");",
+                                    "    pm.collectionVariables.unset(\"user_id\");",
+                                    "    console.log(\"Unset current_user_id/user_id\");",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Create Book",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"Seni Berpikir Positif\",\n    \"available\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{api_gateway_url}}/books",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "books"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                    "    var json = pm.response.json();",
+                                    "    if (json && json.data && json.data.id) {",
+                                    "        pm.collectionVariables.set(\"current_book_id\", json.data.id);",
+                                    "        pm.collectionVariables.set(\"book_id\", json.data.id);",
+                                    "        console.log(\"Saved current_book_id/book_id:\", json.data.id);",
+                                    "    }",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update Book",
+                    "event": [
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "exec": [
+                                    "var urlStr = pm.request.url.toString();",
+                                    "var match = urlStr.match(/(https?:\\/\\/[^\\/]+)\\/books\\/(\\d+)/);",
+                                    "if (match) {",
+                                    "    var baseUrl = match[1];",
+                                    "    var bookId = match[2];",
+                                    "    pm.sendRequest({",
+                                    "        url: baseUrl + \"/books/\" + bookId,",
+                                    "        method: 'GET',",
+                                    "        header: {",
+                                    "            'Accept': 'application/json'",
+                                    "        }",
+                                    "    }, function (err, res) {",
+                                    "        if (res && res.code === 200) {",
+                                    "            var json = res.json();",
+                                    "            if (json && json.data) {",
+                                    "                pm.collectionVariables.set(\"current_book_title\", json.data.title);",
+                                    "                pm.collectionVariables.set(\"current_book_available\", json.data.available);",
+                                    "            }",
+                                    "        }",
+                                    "    });",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"{{current_book_title}} Edit\",\n    \"available\": {{current_book_available}}\n}"
+                        },
+                        "url": {
+                            "raw": "{{api_gateway_url}}/books/{{current_book_id}}",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "books",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Book",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{api_gateway_url}}/books/{{current_book_id}}",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "books",
+                                "1"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.collectionVariables.unset(\"current_book_id\");",
+                                    "    pm.collectionVariables.unset(\"book_id\");",
+                                    "    console.log(\"Unset current_book_id/book_id\");",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Create Loan (Borrow Book)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"user_id\": {{current_user_id}},\n    \"book_id\": {{current_book_id}},\n    \"loan_date\": \"2026-06-14\",\n    \"due_date\": \"2026-06-21\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{api_gateway_url}}/loans",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "loans"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                    "    var json = pm.response.json();",
+                                    "    if (json && json.data && json.data.id) {",
+                                    "        pm.collectionVariables.set(\"current_loan_id\", json.data.id);",
+                                    "        pm.collectionVariables.set(\"loan_id\", json.data.id);",
+                                    "        console.log(\"Saved current_loan_id/loan_id:\", json.data.id);",
+                                    "    }",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update Loan",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"status\": \"returned\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{api_gateway_url}}/loans/{{current_loan_id}}",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "loans",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Loan",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{api_gateway_url}}/loans/{{current_loan_id}}",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "loans",
+                                "1"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.collectionVariables.unset(\"current_loan_id\");",
+                                    "    pm.collectionVariables.unset(\"loan_id\");",
+                                    "    console.log(\"Unset current_loan_id/loan_id\");",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Return Book",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"loan_id\": {{current_loan_id}},\n    \"return_date\": \"2026-06-24\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{api_gateway_url}}/loans/return",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "loans",
+                                "return"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Check Fine",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"loan_id\": {{current_loan_id}}\n}"
+                        },
+                        "url": {
+                            "raw": "{{api_gateway_url}}/fines/check",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "fines",
+                                "check"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var json = pm.response.json();",
+                                    "    if (json && json.data && json.data.fine && json.data.fine.id) {",
+                                    "        pm.collectionVariables.set(\"current_fine_id\", json.data.fine.id);",
+                                    "        pm.collectionVariables.set(\"fine_id\", json.data.fine.id);",
+                                    "        console.log(\"Saved current_fine_id/fine_id:\", json.data.fine.id);",
+                                    "    }",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update Fine",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"status\": \"paid\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{api_gateway_url}}/fines/{{current_fine_id}}",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "fines",
+                                "1"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Fine",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{api_gateway_url}}/fines/{{current_fine_id}}",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "fines",
+                                "1"
+                            ]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.collectionVariables.unset(\"current_fine_id\");",
+                                    "    pm.collectionVariables.unset(\"fine_id\");",
+                                    "    console.log(\"Unset current_fine_id/fine_id\");",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Send Message to RabbitMQ",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{api_gateway_url}}/send-message?loanId={{current_loan_id}}",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "send-message"
+                            ],
+                            "query": [
+                                {
+                                    "key": "loanId",
+                                    "value": "{{current_loan_id}}"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Consume Message from RabbitMQ",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{api_gateway_url}}/consume-message",
+                            "host": [
+                                "{{api_gateway_url}}"
+                            ],
+                            "path": [
+                                "consume-message"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2. Sync API (REST - Direct)",
+            "description": "Endpoint konvensional yang langsung mengenai database dan memblokir (synchronous).",
+            "item": [
+                {
+                    "name": "Book Service",
+                    "item": [
+                        {
+                            "name": "Get All Books",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{book_api_url}}/books",
+                                    "host": [
+                                        "{{book_api_url}}"
+                                    ],
+                                    "path": [
+                                        "books"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Create Book",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"title\": \"Clean Architecture\",\n    \"available\": true\n}"
+                                },
+                                "url": {
+                                    "raw": "{{book_api_url}}/books",
+                                    "host": [
+                                        "{{book_api_url}}"
+                                    ],
+                                    "path": [
+                                        "books"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                            "    var json = pm.response.json();",
+                                            "    if (json && json.data && json.data.id) {",
+                                            "        pm.collectionVariables.set(\"current_book_id\", json.data.id);",
+                                            "        pm.collectionVariables.set(\"book_id\", json.data.id);",
+                                            "        console.log(\"Saved current_book_id/book_id:\", json.data.id);",
+                                            "    }",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Update Book",
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "exec": [
+                                            "var urlStr = pm.request.url.toString();",
+                                            "var match = urlStr.match(/(https?:\\/\\/[^\\/]+)\\/books\\/(\\d+)/);",
+                                            "if (match) {",
+                                            "    var baseUrl = match[1];",
+                                            "    var bookId = match[2];",
+                                            "    pm.sendRequest({",
+                                            "        url: baseUrl + \"/books/\" + bookId,",
+                                            "        method: 'GET',",
+                                            "        header: {",
+                                            "            'Accept': 'application/json'",
+                                            "        }",
+                                            "    }, function (err, res) {",
+                                            "        if (res && res.code === 200) {",
+                                            "            var json = res.json();",
+                                            "            if (json && json.data) {",
+                                            "                pm.collectionVariables.set(\"current_book_title\", json.data.title);",
+                                            "                pm.collectionVariables.set(\"current_book_available\", json.data.available);",
+                                            "            }",
+                                            "        }",
+                                            "    });",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"title\": \"{{current_book_title}} Edit\",\n    \"available\": {{current_book_available}}\n}"
+                                },
+                                "url": {
+                                    "raw": "{{book_api_url}}/books/{{current_book_id}}",
+                                    "host": [
+                                        "{{book_api_url}}"
+                                    ],
+                                    "path": [
+                                        "books",
+                                        "1"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Delete Book",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{book_api_url}}/books/{{current_book_id}}",
+                                    "host": [
+                                        "{{book_api_url}}"
+                                    ],
+                                    "path": [
+                                        "books",
+                                        "1"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "if (pm.response.code === 200) {",
+                                            "    pm.collectionVariables.unset(\"current_book_id\");",
+                                            "    pm.collectionVariables.unset(\"book_id\");",
+                                            "    console.log(\"Unset current_book_id/book_id\");",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Check Book Status",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{book_api_url}}/books/{{current_book_id}}/status",
+                                    "host": [
+                                        "{{book_api_url}}"
+                                    ],
+                                    "path": [
+                                        "books",
+                                        "1",
+                                        "status"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "User Service",
+                    "item": [
+                        {
+                            "name": "Get All Users",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{user_api_url}}/users",
+                                    "host": [
+                                        "{{user_api_url}}"
+                                    ],
+                                    "path": [
+                                        "users"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Create User",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Budi Santoso\",\n    \"email\": \"budi@example.com\",\n    \"password\": \"password123\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{user_api_url}}/users",
+                                    "host": [
+                                        "{{user_api_url}}"
+                                    ],
+                                    "path": [
+                                        "users"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                            "    var json = pm.response.json();",
+                                            "    if (json && json.data && json.data.id) {",
+                                            "        pm.collectionVariables.set(\"current_user_id\", json.data.id);",
+                                            "        pm.collectionVariables.set(\"user_id\", json.data.id);",
+                                            "        console.log(\"Saved current_user_id/user_id:\", json.data.id);",
+                                            "    }",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Update User",
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "exec": [
+                                            "var urlStr = pm.request.url.toString();",
+                                            "var match = urlStr.match(/(https?:\\/\\/[^\\/]+)\\/users\\/(\\d+)/);",
+                                            "if (match) {",
+                                            "    var baseUrl = match[1];",
+                                            "    var userId = match[2];",
+                                            "    pm.sendRequest({",
+                                            "        url: baseUrl + \"/users/\" + userId,",
+                                            "        method: 'GET',",
+                                            "        header: {",
+                                            "            'Accept': 'application/json'",
+                                            "        }",
+                                            "    }, function (err, res) {",
+                                            "        if (res && res.code === 200) {",
+                                            "            var json = res.json();",
+                                            "            if (json && json.data) {",
+                                            "                pm.collectionVariables.set(\"current_user_name\", json.data.name);",
+                                            "                pm.collectionVariables.set(\"current_user_email\", json.data.email);",
+                                            "            }",
+                                            "        }",
+                                            "    });",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"{{current_user_name}} Edit\",\n    \"email\": \"edit.{{current_user_email}}\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{user_api_url}}/users/{{current_user_id}}",
+                                    "host": [
+                                        "{{user_api_url}}"
+                                    ],
+                                    "path": [
+                                        "users",
+                                        "1"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Delete User",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{user_api_url}}/users/{{current_user_id}}",
+                                    "host": [
+                                        "{{user_api_url}}"
+                                    ],
+                                    "path": [
+                                        "users",
+                                        "1"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "if (pm.response.code === 200) {",
+                                            "    pm.collectionVariables.unset(\"current_user_id\");",
+                                            "    pm.collectionVariables.unset(\"user_id\");",
+                                            "    console.log(\"Unset current_user_id/user_id\");",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Loan Service",
+                    "item": [
+                        {
+                            "name": "Get All Loans",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{loan_api_url}}/loans",
+                                    "host": [
+                                        "{{loan_api_url}}"
+                                    ],
+                                    "path": [
+                                        "loans"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Create Loan (Borrow Book)",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"user_id\": {{current_user_id}},\n    \"book_id\": {{current_book_id}},\n    \"loan_date\": \"2026-06-14\",\n    \"due_date\": \"2026-06-21\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{loan_api_url}}/loans",
+                                    "host": [
+                                        "{{loan_api_url}}"
+                                    ],
+                                    "path": [
+                                        "loans"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                            "    var json = pm.response.json();",
+                                            "    if (json && json.data && json.data.id) {",
+                                            "        pm.collectionVariables.set(\"current_loan_id\", json.data.id);",
+                                            "        pm.collectionVariables.set(\"loan_id\", json.data.id);",
+                                            "        console.log(\"Saved current_loan_id/loan_id:\", json.data.id);",
+                                            "    }",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Update Loan",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"status\": \"returned\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{loan_api_url}}/loans/{{current_loan_id}}",
+                                    "host": [
+                                        "{{loan_api_url}}"
+                                    ],
+                                    "path": [
+                                        "loans",
+                                        "1"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Delete Loan",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{loan_api_url}}/loans/{{current_loan_id}}",
+                                    "host": [
+                                        "{{loan_api_url}}"
+                                    ],
+                                    "path": [
+                                        "loans",
+                                        "1"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "if (pm.response.code === 200) {",
+                                            "    pm.collectionVariables.unset(\"current_loan_id\");",
+                                            "    pm.collectionVariables.unset(\"loan_id\");",
+                                            "    console.log(\"Unset current_loan_id/loan_id\");",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Return Book",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"loan_id\": {{current_loan_id}},\n    \"return_date\": \"2026-06-24\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{loan_api_url}}/loans/return",
+                                    "host": [
+                                        "{{loan_api_url}}"
+                                    ],
+                                    "path": [
+                                        "loans",
+                                        "return"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Fine Service",
+                    "item": [
+                        {
+                            "name": "Get All Fines",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{fine_api_url}}/fines",
+                                    "host": [
+                                        "{{fine_api_url}}"
+                                    ],
+                                    "path": [
+                                        "fines"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Create Fine (Manual)",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"loan_id\": {{current_loan_id}},\n    \"user_id\": {{current_user_id}},\n    \"book_id\": {{current_book_id}},\n    \"due_date\": \"2026-06-21\",\n    \"return_date\": \"2026-06-24\",\n    \"late_days\": 3,\n    \"fine_per_day\": 2000,\n    \"total_fine\": 6000,\n    \"status\": \"unpaid\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{fine_api_url}}/fines",
+                                    "host": [
+                                        "{{fine_api_url}}"
+                                    ],
+                                    "path": [
+                                        "fines"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                            "    var json = pm.response.json();",
+                                            "    if (json && json.fine && json.fine.id) {",
+                                            "        pm.collectionVariables.set(\"current_fine_id\", json.fine.id);",
+                                            "        pm.collectionVariables.set(\"fine_id\", json.fine.id);",
+                                            "        console.log(\"Saved current_fine_id/fine_id:\", json.fine.id);",
+                                            "    }",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Update Fine",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"status\": \"paid\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{fine_api_url}}/fines/{{current_fine_id}}",
+                                    "host": [
+                                        "{{fine_api_url}}"
+                                    ],
+                                    "path": [
+                                        "fines",
+                                        "1"
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Delete Fine",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{fine_api_url}}/fines/{{current_fine_id}}",
+                                    "host": [
+                                        "{{fine_api_url}}"
+                                    ],
+                                    "path": [
+                                        "fines",
+                                        "1"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "if (pm.response.code === 200) {",
+                                            "    pm.collectionVariables.unset(\"current_fine_id\");",
+                                            "    pm.collectionVariables.unset(\"fine_id\");",
+                                            "    console.log(\"Unset current_fine_id/fine_id\");",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Check Fine",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"loan_id\": {{current_loan_id}}\n}"
+                                },
+                                "url": {
+                                    "raw": "{{fine_api_url}}/fines/check",
+                                    "host": [
+                                        "{{fine_api_url}}"
+                                    ],
+                                    "path": [
+                                        "fines",
+                                        "check"
+                                    ]
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "exec": [
+                                            "if (pm.response.code === 200) {",
+                                            "    var json = pm.response.json();",
+                                            "    if (json && json.data && json.data.fine && json.data.fine.id) {",
+                                            "        pm.collectionVariables.set(\"current_fine_id\", json.data.fine.id);",
+                                            "        pm.collectionVariables.set(\"fine_id\", json.data.fine.id);",
+                                            "        console.log(\"Saved current_fine_id/fine_id:\", json.data.fine.id);",
+                                            "    }",
+                                            "}"
+                                        ],
+                                        "type": "text/javascript"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "3. Async API (RabbitMQ - Direct)",
+            "description": "Endpoint berbasis Event-Driven menggunakan RabbitMQ.",
+            "item": [
+                {
+                    "name": "Loan Worker (PUBLISHER)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{loan_worker_url}}/send-message?loanId={{current_loan_id}}",
+                            "host": [
+                                "{{loan_worker_url}}"
+                            ],
+                            "path": [
+                                "send-message"
+                            ],
+                            "query": [
+                                {
+                                    "key": "loanId",
+                                    "value": "{{current_loan_id}}"
+                                }
+                            ]
+                        },
+                        "description": "Mem-publish pesan bahwa buku telah dipinjam ke antrean RabbitMQ (book_queue)."
+                    }
+                },
+                {
+                    "name": "Fine Worker (CONSUMER)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{fine_worker_url}}/consume-message",
+                            "host": [
+                                "{{fine_worker_url}}"
+                            ],
+                            "path": [
+                                "consume-message"
+                            ]
+                        },
+                        "description": "Menarik dan memproses pesan dari antrean RabbitMQ (book_queue)."
+                    }
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "api_gateway_url",
+            "value": "http://localhost:8000"
+        },
+        {
+            "key": "book_api_url",
+            "value": "http://localhost:8002"
+        },
+        {
+            "key": "user_api_url",
+            "value": "http://localhost:8001"
+        },
+        {
+            "key": "loan_api_url",
+            "value": "http://localhost:8003"
+        },
+        {
+            "key": "fine_api_url",
+            "value": "http://localhost:8004"
+        },
+        {
+            "key": "loan_worker_url",
+            "value": "http://localhost:8011"
+        },
+        {
+            "key": "fine_worker_url",
+            "value": "http://localhost:8012"
+        },
+        {
+            "key": "current_user_id",
+            "value": ""
+        },
+        {
+            "key": "user_id",
+            "value": ""
+        },
+        {
+            "key": "current_book_id",
+            "value": ""
+        },
+        {
+            "key": "book_id",
+            "value": ""
+        },
+        {
+            "key": "current_loan_id",
+            "value": ""
+        },
+        {
+            "key": "loan_id",
+            "value": ""
+        },
+        {
+            "key": "current_fine_id",
+            "value": ""
+        },
+        {
+            "key": "fine_id",
+            "value": ""
+        }
+    ]
 }

@@ -19,7 +19,7 @@ $userPayload = @{
 } | ConvertTo-Json
 
 $userCreated = Invoke-RestMethod -Uri "$gateway/users" -Method Post -Body $userPayload -ContentType "application/json"
-$userId = $userCreated.user.id
+$userId = $userCreated.data.id
 Write-Host "   [+] Berhasil membuat User dengan ID: $userId" -ForegroundColor Green
 
 $userRead = Invoke-RestMethod -Uri "$gateway/users/$userId" -Method Get
@@ -37,7 +37,7 @@ $bookPayload = @{
 } | ConvertTo-Json
 
 $bookCreated = Invoke-RestMethod -Uri "$gateway/books" -Method Post -Body $bookPayload -ContentType "application/json"
-$bookId = $bookCreated.book.id
+$bookId = $bookCreated.data.id
 Write-Host "   [+] Berhasil membuat Buku dengan ID: $bookId" -ForegroundColor Green
 
 $bookRead = Invoke-RestMethod -Uri "$gateway/books/$bookId" -Method Get
@@ -57,7 +57,7 @@ $loanPayload = @{
 } | ConvertTo-Json
 
 $loanCreated = Invoke-RestMethod -Uri "$gateway/loans" -Method Post -Body $loanPayload -ContentType "application/json"
-$loanId = $loanCreated.loan.id
+$loanId = $loanCreated.data.id
 Write-Host "   [+] Berhasil melakukan peminjaman! Loan ID: $loanId" -ForegroundColor Green
 Write-Host ($loanCreated | ConvertTo-Json -Depth 3)
 Write-Host ""
