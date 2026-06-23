@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Book;
 use App\Models\LoanHistory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 
 class LoanController extends Controller
@@ -14,7 +15,10 @@ class LoanController extends Controller
     // GET ALL LOANS
     public function index()
     {
-        return response()->json(Loan::all());
+        return response()->json([
+            'message' => 'Daftar semua peminjaman berhasil diambil',
+            'data' => Loan::all()
+        ]);
     }
 
     // CREATE LOAN
@@ -27,7 +31,21 @@ class LoanController extends Controller
             'due_date' => 'nullable|date'
         ]);
 
-        // No monolithic foreign key checks. Assume gateway checked it.
+        // Verify User existence
+        $userResponse = Http::get(env('USER_API_URL', 'http://user-api:8000') . '/users/' . $request->user_id);
+        if ($userResponse->status() === 404) {
+            return response()->json([
+                'message' => 'User tidak ditemukan'
+            ], 404);
+        }
+
+        // Verify Book existence
+        $bookResponse = Http::get(env('BOOK_API_URL', 'http://book-api:8000') . '/books/' . $request->book_id);
+        if ($bookResponse->status() === 404) {
+            return response()->json([
+                'message' => 'Buku tidak ditemukan'
+            ], 404);
+        }
 
         $activeLoan = Loan::where('book_id', $request->book_id)
             ->where('status', 'borrowed')
@@ -57,7 +75,7 @@ class LoanController extends Controller
 
         return response()->json([
             'message' => 'Loan berhasil dibuat',
-            'loan' => $loan
+            'data' => $loan
         ]);
     }
 
@@ -66,7 +84,10 @@ class LoanController extends Controller
     {
         $histories = LoanHistory::all();
 
-        return response()->json($histories);
+        return response()->json([
+            'message' => 'Daftar riwayat peminjaman berhasil diambil',
+            'data' => $histories
+        ]);
     }
 
     // PENGEMBALIAN BUKU
@@ -127,13 +148,35 @@ class LoanController extends Controller
 
         if (!$loan) {
             return response()->json([
-                'message' => 'Loan not found'
+                'message' => 'Peminjaman tidak ditemukan'
             ], 404);
         }
 
         return response()->json([
-            'message' => 'Loan detail retrieved successfully',
+            'message' => 'Detail peminjaman berhasil diambil',
             'data' => $loan
+        ]);
+    }
+
+    // GET ACTIVE LOAN BY BOOK ID (For Book Service Check)
+    public function getActiveLoanByBook($bookId)
+    {
+        $activeLoan = Loan::where('book_id', $bookId)
+            ->where('status', 'borrowed')
+            ->first();
+
+        if ($activeLoan) {
+            return response()->json([
+                'borrowed' => true,
+                'user_id' => $activeLoan->user_id,
+                'loan_id' => $activeLoan->id,
+                'message' => 'Buku sedang dipinjam'
+            ]);
+        }
+
+        return response()->json([
+            'borrowed' => false,
+            'message' => 'Buku tersedia'
         ]);
     }
 
@@ -143,14 +186,52 @@ class LoanController extends Controller
         $loan = Loan::find($id);
 
         if (!$loan) {
-            return response()->json(['message' => 'Loan tidak ditemukan'], 404);
+            return response()->json(['message' => 'Peminjaman tidak ditemukan'], 404);
         }
 
-        $loan->update($request->all());
+        $request->validate([
+            'user_id' => 'sometimes|required|integer',
+            'book_id' => 'sometimes|required|integer',
+            'loan_date' => 'sometimes|required|date',
+            'due_date' => 'sometimes|required|date',
+            'return_date' => 'sometimes|nullable|date',
+            'status' => 'sometimes|required|string|in:borrowed,returned'
+        ]);
+
+        // If user_id is changed, verify it exists in User Service
+        if ($request->has('user_id') && $request->user_id != $loan->user_id) {
+            $userResponse = Http::get(env('USER_API_URL', 'http://user-api:8000') . '/users/' . $request->user_id);
+            if ($userResponse->status() === 404) {
+                return response()->json([
+                    'message' => 'User tidak ditemukan'
+                ], 404);
+            }
+        }
+
+        // If book_id is changed, verify it exists in Book Service
+        if ($request->has('book_id') && $request->book_id != $loan->book_id) {
+            $bookResponse = Http::get(env('BOOK_API_URL', 'http://book-api:8000') . '/books/' . $request->book_id);
+            if ($bookResponse->status() === 404) {
+                return response()->json([
+                    'message' => 'Buku tidak ditemukan'
+                ], 404);
+            }
+        }
+
+        $loan->fill($request->all());
+
+        if (!$loan->isDirty()) {
+            return response()->json([
+                'message' => 'tidak ada perubahan data',
+                'data' => $loan
+            ], 200);
+        }
+
+        $loan->save();
 
         return response()->json([
-            'message' => 'Loan berhasil diperbarui',
-            'loan' => $loan
+            'message' => 'Peminjaman berhasil diperbarui',
+            'data' => $loan
         ]);
     }
 
@@ -160,11 +241,17 @@ class LoanController extends Controller
         $loan = Loan::find($id);
 
         if (!$loan) {
-            return response()->json(['message' => 'Loan tidak ditemukan'], 404);
+            return response()->json(['message' => 'Peminjaman tidak ditemukan'], 404);
         }
 
         $loan->delete();
 
-        return response()->json(['message' => 'Loan berhasil dihapus']);
+        // Re-index all IDs sequentially starting from 1
+        \Illuminate\Support\Facades\DB::statement('SET @count = 0');
+        \Illuminate\Support\Facades\DB::statement('UPDATE loans SET id = (@count:=@count+1) ORDER BY id ASC');
+        $maxId = \Illuminate\Support\Facades\DB::table('loans')->max('id') ?? 0;
+        \Illuminate\Support\Facades\DB::statement("ALTER TABLE loans AUTO_INCREMENT = " . ($maxId + 1));
+
+        return response()->json(['message' => 'Peminjaman berhasil dihapus']);
     }
 }

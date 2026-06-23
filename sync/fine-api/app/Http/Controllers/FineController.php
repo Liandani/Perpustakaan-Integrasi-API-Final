@@ -145,11 +145,32 @@ class FineController extends Controller
             return response()->json(['message' => 'Fine tidak ditemukan'], 404);
         }
 
-        $fine->update($request->all());
+        $request->validate([
+            'loan_id' => 'sometimes|required|integer',
+            'user_id' => 'sometimes|required|integer',
+            'book_id' => 'sometimes|required|integer',
+            'due_date' => 'sometimes|required|date',
+            'return_date' => 'sometimes|nullable|date',
+            'late_days' => 'sometimes|required|integer',
+            'fine_per_day' => 'sometimes|required|numeric',
+            'total_fine' => 'sometimes|required|numeric',
+            'status' => 'sometimes|required|string|in:unpaid,paid,no_fine'
+        ]);
+
+        $fine->fill($request->all());
+
+        if (!$fine->isDirty()) {
+            return response()->json([
+                'message' => 'tidak ada perubahan data',
+                'data' => $fine
+            ], 200);
+        }
+
+        $fine->save();
 
         return response()->json([
             'message' => 'Fine berhasil diperbarui',
-            'fine' => $fine
+            'data' => $fine
         ]);
     }
 
@@ -163,6 +184,12 @@ class FineController extends Controller
         }
 
         $fine->delete();
+
+        // Re-index all IDs sequentially starting from 1
+        \Illuminate\Support\Facades\DB::statement('SET @count = 0');
+        \Illuminate\Support\Facades\DB::statement('UPDATE fines SET id = (@count:=@count+1) ORDER BY id ASC');
+        $maxId = \Illuminate\Support\Facades\DB::table('fines')->max('id') ?? 0;
+        \Illuminate\Support\Facades\DB::statement("ALTER TABLE fines AUTO_INCREMENT = " . ($maxId + 1));
 
         return response()->json(['message' => 'Fine berhasil dihapus']);
     }

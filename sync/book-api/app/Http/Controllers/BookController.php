@@ -11,7 +11,10 @@ class BookController extends Controller
     // GET ALL BOOKS
     public function index()
     {
-        return response()->json(Book::all());
+        return response()->json([
+            'message' => 'Daftar semua buku berhasil diambil',
+            'data' => Book::all()
+        ]);
     }
 
     // GET BOOK BY ID
@@ -25,7 +28,10 @@ class BookController extends Controller
             ], 404);
         }
 
-        return response()->json($book);
+        return response()->json([
+            'message' => 'Detail buku berhasil diambil',
+            'data' => $book
+        ]);
     }
 
     // CHECK STATUS BOOK (AVAILABLE / BORROWED)
@@ -85,6 +91,12 @@ class BookController extends Controller
             'available' => 'boolean'
         ]);
 
+        if ($request->has('available') && !$request->available) {
+            return response()->json([
+                'message' => 'Buku baru harus tersedia (available harus bernilai true)'
+            ], 400);
+        }
+
         $book = Book::create([
             'title' => $request->title,
             'available' => $request->available ?? true,
@@ -92,7 +104,7 @@ class BookController extends Controller
 
         return response()->json([
             'message' => 'Buku berhasil ditambahkan',
-            'book' => $book
+            'data' => $book
         ]);
     }
 
@@ -107,11 +119,25 @@ class BookController extends Controller
             ], 404);
         }
 
-        $book->update($request->all());
+        $request->validate([
+            'title' => 'sometimes|required|string',
+            'available' => 'sometimes|required|boolean'
+        ]);
+
+        $book->fill($request->all());
+
+        if (!$book->isDirty()) {
+            return response()->json([
+                'message' => 'tidak ada perubahan data',
+                'data' => $book
+            ], 200);
+        }
+
+        $book->save();
 
         return response()->json([
             'message' => 'Buku berhasil diperbarui',
-            'book' => $book
+            'data' => $book
         ]);
     }
 
@@ -127,6 +153,12 @@ class BookController extends Controller
         }
 
         $book->delete();
+
+        // Re-index all IDs sequentially starting from 1
+        \Illuminate\Support\Facades\DB::statement('SET @count = 0');
+        \Illuminate\Support\Facades\DB::statement('UPDATE books SET id = (@count:=@count+1) ORDER BY id ASC');
+        $maxId = \Illuminate\Support\Facades\DB::table('books')->max('id') ?? 0;
+        \Illuminate\Support\Facades\DB::statement("ALTER TABLE books AUTO_INCREMENT = " . ($maxId + 1));
 
         return response()->json([
             'message' => 'Buku berhasil dihapus'

@@ -27,7 +27,8 @@ class RabbitMQController extends Controller
         if (!$userId) {
             $userResponse = $client->get($userApiUrl . '/users');
             if ($userResponse->getStatusCode() == 200) {
-                $users = json_decode($userResponse->getBody(), true);
+                $responseBody = json_decode($userResponse->getBody(), true);
+                $users = $responseBody['data'] ?? [];
                 if (!empty($users)) {
                     $user = end($users);
                 } else {
@@ -38,14 +39,20 @@ class RabbitMQController extends Controller
             }
         } else {
             $userResponse = $client->get($userApiUrl . '/users/' . $userId);
-            $user = $userResponse->getStatusCode() == 200 ? json_decode($userResponse->getBody(), true) : ['id' => (int)$userId, 'name' => 'Mock User'];
+            if ($userResponse->getStatusCode() == 200) {
+                $responseBody = json_decode($userResponse->getBody(), true);
+                $user = $responseBody['data'] ?? ['id' => (int)$userId, 'name' => 'Mock User'];
+            } else {
+                $user = ['id' => (int)$userId, 'name' => 'Mock User'];
+            }
         }
 
         // Fetch Book (Latest if not specified)
         if (!$bookId) {
             $bookResponse = $client->get($bookApiUrl . '/books');
             if ($bookResponse->getStatusCode() == 200) {
-                $books = json_decode($bookResponse->getBody(), true);
+                $responseBody = json_decode($bookResponse->getBody(), true);
+                $books = $responseBody['data'] ?? [];
                 if (!empty($books)) {
                     $book = end($books);
                 } else {
@@ -56,7 +63,12 @@ class RabbitMQController extends Controller
             }
         } else {
             $bookResponse = $client->get($bookApiUrl . '/books/' . $bookId);
-            $book = $bookResponse->getStatusCode() == 200 ? json_decode($bookResponse->getBody(), true) : ['id' => (int)$bookId, 'title' => 'Mock Book'];
+            if ($bookResponse->getStatusCode() == 200) {
+                $responseBody = json_decode($bookResponse->getBody(), true);
+                $book = $responseBody['data'] ?? ['id' => (int)$bookId, 'title' => 'Mock Book'];
+            } else {
+                $book = ['id' => (int)$bookId, 'title' => 'Mock Book'];
+            }
         }
 
         // RabbitMQ Connection

@@ -36,6 +36,86 @@
 					}
 				},
 				{
+					"name": "Update User",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var urlStr = pm.request.url.toString();",
+									"var match = urlStr.match(/(https?:\\/\\/[^\\/]+)\\/users\\/(\\d+)/);",
+									"if (match) {",
+									"    var baseUrl = match[1];",
+									"    var userId = match[2];",
+									"    if (pm.collectionVariables.get(\"last_loaded_user_id\") !== userId) {",
+									"        pm.sendRequest({",
+									"            url: baseUrl + \"/users/\" + userId,",
+									"            method: 'GET',",
+									"            header: {",
+									"                'Accept': 'application/json'",
+									"            }",
+									"        }, function (err, res) {",
+									"            if (res && res.code === 200) {",
+									"                var json = res.json();",
+									"                if (json && json.data) {",
+									"                    pm.collectionVariables.set(\"last_loaded_user_id\", userId);",
+									"                    var newBody = {",
+									"                        name: json.data.name,",
+									"                        email: json.data.email",
+									"                    };",
+									"                    pm.request.body.raw = JSON.stringify(newBody, null, 4);",
+									"                }",
+									"            }",
+									"        });",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Budi Santoso Edit\",\n    \"email\": \"budi.edit@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/users/1",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"users",
+								"1"
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{api_gateway_url}}/users/1",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"users",
+								"1"
+							]
+						}
+					}
+				},
+				{
 					"name": "Create Book",
 					"request": {
 						"method": "POST",
@@ -61,6 +141,80 @@
 					}
 				},
 				{
+					"name": "Update Book",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var urlStr = pm.request.url.toString();",
+									"var match = urlStr.match(/(https?:\\/\\/[^\\/]+)\\/books\\/(\\d+)/);",
+									"if (match) {",
+									"    var baseUrl = match[1];",
+									"    var bookId = match[2];",
+									"    pm.sendRequest({",
+									"        url: baseUrl + \"/books/\" + bookId,",
+									"        method: 'GET',",
+									"        header: {",
+									"            'Accept': 'application/json'",
+									"        }",
+									"    }, function (err, res) {",
+									"        if (res && res.code === 200) {",
+									"            var json = res.json();",
+									"            if (json && json.data) {",
+									"                pm.collectionVariables.set(\"current_book_title\", json.data.title);",
+									"                pm.collectionVariables.set(\"current_book_available\", json.data.available);",
+									"            }",
+									"        }",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"{{current_book_title}} Edit\",\n    \"available\": {{current_book_available}}\n}"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/books/1",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"books",
+								"1"
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Book",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{api_gateway_url}}/books/1",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"books",
+								"1"
+							]
+						}
+					}
+				},
+				{
 					"name": "Create Loan (Borrow Book)",
 					"request": {
 						"method": "POST",
@@ -81,6 +235,49 @@
 							],
 							"path": [
 								"loans"
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Loan",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"returned\"\n}"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/loans/1",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"loans",
+								"1"
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Loan",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{api_gateway_url}}/loans/1",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"loans",
+								"1"
 							]
 						}
 					}
@@ -133,6 +330,49 @@
 							"path": [
 								"fines",
 								"check"
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Fine",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"paid\"\n}"
+						},
+						"url": {
+							"raw": "{{api_gateway_url}}/fines/1",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"fines",
+								"1"
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Fine",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{api_gateway_url}}/fines/1",
+							"host": [
+								"{{api_gateway_url}}"
+							],
+							"path": [
+								"fines",
+								"1"
 							]
 						}
 					}
@@ -220,6 +460,80 @@
 							}
 						},
 						{
+							"name": "Update Book",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var urlStr = pm.request.url.toString();",
+											"var match = urlStr.match(/(https?:\\/\\/[^\\/]+)\\/books\\/(\\d+)/);",
+											"if (match) {",
+											"    var baseUrl = match[1];",
+											"    var bookId = match[2];",
+											"    pm.sendRequest({",
+											"        url: baseUrl + \"/books/\" + bookId,",
+											"        method: 'GET',",
+											"        header: {",
+											"            'Accept': 'application/json'",
+											"        }",
+											"    }, function (err, res) {",
+											"        if (res && res.code === 200) {",
+											"            var json = res.json();",
+											"            if (json && json.data) {",
+											"                pm.collectionVariables.set(\"current_book_title\", json.data.title);",
+											"                pm.collectionVariables.set(\"current_book_available\", json.data.available);",
+											"            }",
+											"        }",
+											"    });",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"title\": \"{{current_book_title}} Edit\",\n    \"available\": {{current_book_available}}\n}"
+								},
+								"url": {
+									"raw": "{{book_api_url}}/books/1",
+									"host": [
+										"{{book_api_url}}"
+									],
+									"path": [
+										"books",
+										"1"
+									]
+								}
+							}
+						},
+						{
+							"name": "Delete Book",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{book_api_url}}/books/1",
+									"host": [
+										"{{book_api_url}}"
+									],
+									"path": [
+										"books",
+										"1"
+									]
+								}
+							}
+						},
+						{
 							"name": "Check Book Status",
 							"request": {
 								"method": "GET",
@@ -282,6 +596,80 @@
 									]
 								}
 							}
+						},
+						{
+							"name": "Update User",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var urlStr = pm.request.url.toString();",
+											"var match = urlStr.match(/(https?:\\/\\/[^\\/]+)\\/users\\/(\\d+)/);",
+											"if (match) {",
+											"    var baseUrl = match[1];",
+											"    var userId = match[2];",
+											"    pm.sendRequest({",
+											"        url: baseUrl + \"/users/\" + userId,",
+											"        method: 'GET',",
+											"        header: {",
+											"            'Accept': 'application/json'",
+											"        }",
+											"    }, function (err, res) {",
+											"        if (res && res.code === 200) {",
+											"            var json = res.json();",
+											"            if (json && json.data) {",
+											"                pm.collectionVariables.set(\"current_user_name\", json.data.name);",
+											"                pm.collectionVariables.set(\"current_user_email\", json.data.email);",
+											"            }",
+											"        }",
+											"    });",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"{{current_user_name}} Edit\",\n    \"email\": \"edit.{{current_user_email}}\"\n}"
+								},
+								"url": {
+									"raw": "{{user_api_url}}/users/1",
+									"host": [
+										"{{user_api_url}}"
+									],
+									"path": [
+										"users",
+										"1"
+									]
+								}
+							}
+						},
+						{
+							"name": "Delete User",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{user_api_url}}/users/1",
+									"host": [
+										"{{user_api_url}}"
+									],
+									"path": [
+										"users",
+										"1"
+									]
+								}
+							}
 						}
 					]
 				},
@@ -330,9 +718,9 @@
 							}
 						},
 						{
-							"name": "Return Book",
+							"name": "Update Loan",
 							"request": {
-								"method": "POST",
+								"method": "PUT",
 								"header": [
 									{
 										"key": "Content-Type",
@@ -341,19 +729,62 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"loan_id\": 1,\n    \"return_date\": \"2026-06-24\"\n}"
+									"raw": "{\n    \"status\": \"returned\"\n}"
 								},
 								"url": {
-									"raw": "{{loan_api_url}}/loans/return",
+									"raw": "{{loan_api_url}}/loans/1",
 									"host": [
 										"{{loan_api_url}}"
 									],
 									"path": [
 										"loans",
-										"return"
+										"1"
 									]
 								}
 							}
+						},
+						{
+							"name": "Delete Loan",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{loan_api_url}}/loans/1",
+									"host": [
+										"{{loan_api_url}}"
+									],
+									"path": [
+										"loans",
+										"1"
+									]
+								}
+							}
+						},
+						{
+							"name": "Return Book",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"loan_id\": 1,\n    \"return_date\": \"2026-06-24\"\n}"
+						},
+						"url": {
+							"raw": "{{loan_api_url}}/loans/return",
+							"host": [
+								"{{loan_api_url}}"
+							],
+							"path": [
+								"loans",
+								"return"
+							]
+						}
+					}
 						}
 					]
 				},
@@ -372,6 +803,74 @@
 									],
 									"path": [
 										"fines"
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Fine (Manual)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"loan_id\": 1,\n    \"user_id\": 1,\n    \"book_id\": 1,\n    \"due_date\": \"2026-06-21\",\n    \"return_date\": \"2026-06-24\",\n    \"late_days\": 3,\n    \"fine_per_day\": 2000,\n    \"total_fine\": 6000,\n    \"status\": \"unpaid\"\n}"
+								},
+								"url": {
+									"raw": "{{fine_api_url}}/fines",
+									"host": [
+										"{{fine_api_url}}"
+									],
+									"path": [
+										"fines"
+									]
+								}
+							}
+						},
+						{
+							"name": "Update Fine",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"status\": \"paid\"\n}"
+								},
+								"url": {
+									"raw": "{{fine_api_url}}/fines/1",
+									"host": [
+										"{{fine_api_url}}"
+									],
+									"path": [
+										"fines",
+										"1"
+									]
+								}
+							}
+						},
+						{
+							"name": "Delete Fine",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{fine_api_url}}/fines/1",
+									"host": [
+										"{{fine_api_url}}"
+									],
+									"path": [
+										"fines",
+										"1"
 									]
 								}
 							}

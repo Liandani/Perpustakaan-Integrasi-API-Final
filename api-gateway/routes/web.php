@@ -12,11 +12,14 @@ Route::get('/', function () {
 function proxyRequest(Request $request, $serviceUrl) {
     $method = strtolower($request->method());
     
-    // For GET requests, we shouldn't send a JSON body.
+    $headers = [
+        'Accept' => 'application/json',
+    ];
+
     if ($method === 'get') {
-        $response = Http::get($serviceUrl, $request->all());
+        $response = Http::withHeaders($headers)->get($serviceUrl, $request->all());
     } else {
-        $response = Http::$method($serviceUrl, $request->all());
+        $response = Http::withHeaders($headers)->$method($serviceUrl, $request->all());
     }
 
     $contentType = $response->header('Content-Type');

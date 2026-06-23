@@ -23,6 +23,6 @@ final class FineUser
             return null;
         }
 
-        return $response->json();
+        return $response->json('data');
     }
 }

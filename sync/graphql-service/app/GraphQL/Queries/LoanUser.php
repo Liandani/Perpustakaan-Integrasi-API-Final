@@ -23,6 +23,6 @@ final class LoanUser
             return null;
         }
 
-        return $response->json();
+        return $response->json('data');
     }
 }
